@@ -71,3 +71,26 @@ export interface EnrichedInventoryRecord extends InventoryRecord {
   store_name: string;
   product_name: string;
 }
+
+// Authentication types
+export type UserRole = 'admin' | 'store';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  store_id?: string;
+  created_at: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AuthState {
+  user: AuthUser | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+}

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
+import { isAdmin } from '@/lib/auth';
 import PageHeader from '@/components/PageHeader';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
@@ -13,7 +15,21 @@ import { cn } from '@/lib/utils';
 
 export default function InventoryPage() {
   const { stores, products, inventoryRecords, addInventoryRecord, updateInventoryRecord, deleteInventoryRecord } = useData();
-  const [selectedStoreId, setSelectedStoreId] = useState(stores[0]?.id || '');
+  const { user } = useAuth();
+  
+  // For store users, only allow their own store
+  const initialStoreId = isAdmin(user) 
+    ? stores[0]?.id || '' 
+    : user?.store_id || '';
+    
+  const [selectedStoreId, setSelectedStoreId] = useState(initialStoreId);
+
+  // If store user and store changes somehow, reset
+  useEffect(() => {
+    if (!isAdmin(user) && user?.store_id) {
+      setSelectedStoreId(user.store_id);
+    }
+  }, [user]);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -164,29 +180,35 @@ export default function InventoryPage() {
         }
       />
 
-      {/* Store Selector */}
-      <Card className="mb-8">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Select Store</label>
-            <div className="relative">
-              <select 
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                value={selectedStoreId}
-                onChange={(e) => setSelectedStoreId(e.target.value)}
-              >
-                {stores.map(store => (
-                  <option key={store.id} value={store.id}>{store.name} - {store.location}</option>
-                ))}
-              </select>
-              <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+      {/* Store Selector - only for admin */}
+      {isAdmin(user) && (
+        <Card className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Select Store</label>
+              <div className="relative">
+                <select 
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  value={selectedStoreId}
+                  onChange={(e) => setSelectedStoreId(e.target.value)}
+                >
+                  {stores.map(store => (
+                    <option key={store.id} value={store.id}>{store.name} - {store.location}</option>
+                  ))}
+                </select>
+                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+              </div>
             </div>
           </div>
-          <div className="flex items-end pb-1">
-            <div className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 flex items-center">
-              <ClipboardList className="w-4 h-4 mr-2" />
-              <span className="text-sm font-medium">Viewing inventory for: {selectedStore?.name}</span>
-            </div>
+        </Card>
+      )}
+      
+      {/* Current Store Info */}
+      <Card className="mb-8">
+        <div className="flex items-center gap-2">
+          <div className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 flex items-center">
+            <ClipboardList className="w-4 h-4 mr-2" />
+            <span className="text-sm font-medium">Viewing inventory for: {selectedStore?.name}</span>
           </div>
         </div>
       </Card>
